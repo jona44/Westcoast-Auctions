@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}My Listings - Auction Platform{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight">My Listings</h1>
+        <a href="{% url 'listing_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-100 transition-all">Sell New Item</a>
+    </div>
+    <p class="text-slate-500 mt-2">Manage all the items you are currently selling.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {% for item in listings %}
+        <div class="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col group hover:-translate-y-1 transition-all">
+            <div class="relative h-48 overflow-hidden bg-slate-100">
+                {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-slate-400 font-medium">No Image</div>
+                {% endif %}
+                
+                {% if not item.is_active %}
+                    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center">
+                        <span class="bg-white/90 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider text-slate-900 shadow-sm">
+                            Inactive / Pending
+                        </span>
+                    </div>
+                {% elif item.is_expired %}
+                    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center">
+                        <span class="bg-white/90 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider text-slate-900 shadow-sm">
+                            Closed
+                        </span>
+                    </div>
+                {% else %}
+                    <div class="absolute top-4 right-4 {% if not item.has_started %}bg-blue-500/90{% else %}bg-green-500/90{% endif %} backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                        {% if not item.has_started %}Scheduled{% else %}Active{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="p-6 flex flex-col flex-1">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ item.category }}</span>
+                    {% if item.is_active and not item.is_expired %}
+                        <span class="text-xs font-bold {% if not item.has_started %}text-blue-500{% else %}text-red-500{% endif %}">
+                            {% if not item.has_started %}Starts in {{ item.start_time|timeuntil }}{% else %}{{ item.end_time|timeuntil }} left{% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <h3 class="text-lg font-black text-slate-900 mb-4 line-clamp-1">{{ item.title }}</h3>
+                
+                <div class="mt-auto grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl mb-4">
+                    <div>
+                        <span class="block text-[10px] text-slate-500 uppercase font-bold tracking-tight mb-1">Current Bid</span>
+                        <span class="text-lg font-black text-slate-900">${{ item.current_bid }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-[10px] text-slate-500 uppercase font-bold tracking-tight mb-1">Bids</span>
+                        <span class="text-lg font-black text-slate-900">{{ item.bids.count }}</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <a href="{% url 'listing_detail' item.id %}" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-center py-2.5 rounded-xl text-sm font-bold transition-colors">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-span-full py-24 text-center bg-white rounded-3xl border border-slate-100 shadow-sm">
+             <div class="text-5xl mb-4 text-slate-200 flex justify-center">
+                 <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+             </div>
+             <p class="text-slate-600 font-bold text-lg mb-2">You aren't selling any items yet.</p>
+             <p class="text-slate-500 text-sm mb-6">Create your first listing to start selling.</p>
+             <a href="{% url 'listing_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md shadow-blue-100 transition-all inline-block">Sell an Item</a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

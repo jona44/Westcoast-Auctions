@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Checkout - Auction Platform{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-10 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 mt-10">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-black text-slate-900 tracking-tight">Final Step</h2>
+        <p class="text-slate-500 mt-2">Check your order details before proceeding to payment.</p>
+    </div>
+
+    <div class="bg-slate-50 rounded-2xl p-8 mb-8">
+        <div class="flex items-center space-x-6 mb-6">
+             <div class="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-xl">
+                 🎁
+             </div>
+             <div>
+                 <p class="text-xs text-slate-400 font-black uppercase tracking-widest">Item Won</p>
+                 <h3 class="text-xl font-bold text-slate-900">{{ close_info.listing.title }}</h3>
+             </div>
+        </div>
+        <div class="border-t border-slate-200 pt-6 space-y-4">
+            <div class="flex justify-between items-center">
+                 <span class="text-slate-500">Winning Bid</span>
+                 <span class="text-xl font-bold text-slate-900">${{ close_info.winning_bid.amount }}</span>
+            </div>
+            <div class="flex justify-between items-center text-2xl font-black text-blue-600">
+                <span>Total Amount Due</span>
+                <span>${{ payfast_data.amount }}</span>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ payfast_url }}">
+        {% for name, value in payfast_data.items %}
+            <input type="hidden" name="{{ name }}" value="{{ value }}">
+        {% endfor %}
+        
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-200 transition-all hover:-translate-y-1 active:scale-[0.98] flex items-center justify-center space-x-3">
+             <span>🚀 Proceed to Secure PayFast Checkout</span>
+        </button>
+    </form>
+    
+    <div class="mt-8 text-center flex items-center justify-center space-x-3 grayscale opacity-50">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Secure Payments via</span>
+        <img src="https://www.payfast.co.za/images/logos/light-background.svg" class="h-6" alt="PayFast Logo">
+    </div>
+</div>
+{% endblock %}

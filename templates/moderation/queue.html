@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Moderation Queue - Auction Platform{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto mt-10">
+    <div class="flex items-center justify-between mb-12">
+        <h1 class="text-4xl font-black text-slate-900 tracking-tight">🛡️ Moderation Dashboard</h1>
+        <div class="flex space-x-3">
+            <span class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-md">{{ approvals.count }} Pending Approvals</span>
+            <span class="bg-red-500 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-md">{{ reports.count }} New Reports</span>
+        </div>
+    </div>
+
+    <!-- Approvals Section -->
+    <div class="mb-20">
+        <h2 class="text-2xl font-black text-slate-900 mb-8 border-b border-slate-200 pb-4">New Listing Approvals</h2>
+        {% if approvals %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for approval in approvals %}
+                    <div class="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col">
+                        <div class="h-48 overflow-hidden relative">
+                            {% if approval.listing.image %}
+                                <img src="{{ approval.listing.image.url }}" class="w-full h-full object-cover">
+                                {% if approval.listing.additional_images.exists %}
+                                    <div class="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">+{{ approval.listing.additional_images.count }} Photos</div>
+                                {% endif %}
+                            {% else %}
+                                <div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">No Image</div>
+                            {% endif %}
+                        </div>
+                        <div class="p-6 flex-1">
+                            <h3 class="text-xl font-bold text-slate-900 mb-2 truncate">{{ approval.listing.title }}</h3>
+                            <p class="text-slate-500 text-sm mb-4 line-clamp-2">{{ approval.listing.description }}</p>
+                            <div class="flex items-center space-x-2 mb-6">
+                                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold">{{ approval.listing.seller.username|slice:":1"|upper }}</div>
+                                <span class="text-xs text-slate-500 font-medium">{{ approval.listing.seller.username }}</span>
+                            </div>
+                             <div class="flex flex-col space-y-3 mt-auto">
+                                <div class="flex space-x-3">
+                                    <a href="{% url 'approve_listing' approval.id %}" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-center text-sm font-black transition-all shadow-md shadow-green-100">Approve</a>
+                                    <a href="{% url 'reject_listing' approval.id %}" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl text-center text-sm font-black transition-all">Reject</a>
+                                </div>
+                                {% if not approval.listing.seller.profile.verified %}
+                                    <a href="{% url 'verify_user' approval.listing.seller.id %}" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 py-2.5 rounded-xl text-center text-[10px] font-black uppercase tracking-widest transition-all">Verify Seller Identity</a>
+                                {% else %}
+                                    <div class="w-full bg-slate-50 text-slate-400 py-2.5 rounded-xl text-center text-[10px] font-black uppercase tracking-widest cursor-default">Already Verified ✅</div>
+                                {% endif %}
+                             </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="p-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">Queue is clean ✨</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Reports Section -->
+    <div>
+        <h2 class="text-2xl font-black text-slate-900 mb-8 border-b border-slate-200 pb-4">User Reports</h2>
+        {% if reports %}
+            <div class="space-y-4">
+                {% for report in reports %}
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-lg flex items-center justify-between">
+                        <div class="flex items-center space-x-6">
+                             <div class="bg-red-50 text-red-600 p-3 rounded-2xl">🚩</div>
+                             <div>
+                                 <h4 class="font-black text-slate-900">Against: {{ report.listing.title }}</h4>
+                                 <p class="text-slate-500 text-sm">Reported by: <span class="font-bold">{{ report.user.username }}</span></p>
+                                 <p class="text-slate-900 font-medium text-sm mt-1 italic">"{{ report.reason }}"</p>
+                             </div>
+                        </div>
+                        <div class="flex space-x-3">
+                             <a href="{% url 'listing_detail' report.listing.id %}" class="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-all">View Item</a>
+                             <a href="{% url 'ban_user' report.user.id %}" onclick="return confirm('Are you sure you want to BAN this user? This will deactivate their account and all their listings.')" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-bold transition-all">Ban User</a>
+                             <a href="{% url 'mark_report_reviewed' report.id %}" class="px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">Done</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-slate-400 font-bold text-center py-10">No active reports.</p>
+        {% endif %}
+    </div>
+
+    <!-- All Listings Section -->
+    <div class="mt-20">
+        <h2 class="text-2xl font-black text-slate-900 mb-8 border-b border-slate-200 pb-4">All Platform Items</h2>
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50 border-b border-slate-100 text-slate-900 font-bold uppercase tracking-widest text-[10px]">
+                    <tr>
+                        <th class="p-6">Title</th>
+                        <th class="p-6">Seller</th>
+                        <th class="p-6">Category</th>
+                        <th class="p-6">Created</th>
+                        <th class="p-6">Status</th>
+                        <th class="p-6">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    {% for item in all_listings %}
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="p-6 font-bold text-slate-900">{{ item.title|truncatechars:40 }}</td>
+                        <td class="p-6">{{ item.seller.username }}</td>
+                        <td class="p-6">{{ item.category }}</td>
+                        <td class="p-6">{{ item.created_at|date:"M d, Y" }}</td>
+                        <td class="p-6">
+                            {% if item.is_active %}
+                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Active</span>
+                            {% else %}
+                                <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-6 flex space-x-4">
+                            <a href="{% url 'listing_detail' item.id %}" class="text-blue-600 hover:text-blue-800 font-bold transition-colors">View</a>
+                            <form action="{% url 'force_delete_listing' item.id %}" method="post" onsubmit="return confirm('Are you sure you want to FORCE-DELETE this listing? This action cannot be undone.');" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="text-red-500 hover:text-red-700 font-bold transition-colors">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-6 text-center text-slate-400 font-bold">No items found on the platform.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

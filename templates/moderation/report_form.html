@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Report Listing - Auction Platform{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-10 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 mt-10">
+    <div class="text-center mb-8">
+        <div class="w-20 h-20 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6 text-3xl shadow-lg shadow-red-100/50">
+            🚩
+        </div>
+        <h2 class="text-3xl font-black text-slate-900 tracking-tight">Report Auction</h2>
+        <p class="text-slate-500 mt-2">Suspicious item? Please explain why.</p>
+    </div>
+
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+        <div>
+            <label for="reason" class="block text-sm font-semibold text-slate-700 mb-2 uppercase tracking-widest text-[10px]">Reason for reporting</label>
+            <textarea name="reason" rows="4" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all outline-none bg-slate-50 text-slate-800 font-medium"></textarea>
+        </div>
+        
+        <div class="flex flex-col space-y-3">
+            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl shadow-xl shadow-red-200 transition-all hover:-translate-y-1 active:scale-[0.98]">
+                Submit Report
+            </button>
+            <a href="{% url 'listing_detail' listing.id %}" class="block text-center text-slate-400 hover:text-slate-600 font-bold text-sm py-2 px-4 transition-colors">
+                Actually, go back
+            </a>
+        </div>
+    </form>
+    
+    <p class="text-center text-[10px] uppercase font-black tracking-widest text-slate-300 mt-8">Your identity will be kept private.</p>
+</div>
+{% endblock %}

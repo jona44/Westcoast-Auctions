@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.title }} - Auction Platform{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto mt-10">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div>
+            <div class="relative rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-xl group">
+                {% if listing.image %}
+                    <img id="main-image" src="{{ listing.image.url }}" alt="{{ listing.title }}" class="w-full h-[300px] md:h-[500px] object-cover group-hover:scale-105 transition-transform duration-700">
+                {% else %}
+                    <div class="w-full h-[300px] md:h-[500px] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                        <span class="text-slate-400 font-bold text-xl">Image Placeholder</span>
+                    </div>
+                {% endif %}
+                <div class="absolute top-6 left-6 flex space-x-3">
+                    <span class="bg-white/90 backdrop-blur-md {% if not listing.has_started %}text-amber-600{% else %}text-blue-700{% endif %} px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-sm">{% if not listing.has_started %}Scheduled{% else %}Active{% endif %}</span>
+                    <span class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-md shadow-blue-200">{{ listing.category }}</span>
+                </div>
+                
+                {% if listing.seller == user %}
+                    <div class="absolute bottom-6 right-6 flex space-x-3">
+                        <a href="{% url 'listing_update' listing.id %}" class="bg-white/90 backdrop-blur-md text-slate-700 px-4 py-2 rounded-2xl hover:bg-white transition-all shadow-lg hover:-translate-y-1 text-sm font-bold">
+                            ✏️ Edit
+                        </a>
+                        {% if listing.is_active %}
+                        <a href="{% url 'listing_withdraw' listing.id %}" class="bg-amber-500/90 backdrop-blur-md text-white px-4 py-2 rounded-2xl hover:bg-amber-500 transition-all shadow-lg hover:-translate-y-1 text-sm font-bold">
+                            🚫 Withdraw
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if listing.additional_images.exists %}
+                <div class="flex space-x-4 mt-6 overflow-x-auto pb-4 scrollbar-hide">
+                    {% if listing.image %}
+                    <div class="w-16 h-16 rounded-xl overflow-hidden border-2 border-blue-600 shadow-lg cursor-pointer flex-shrink-0 transition-all active:scale-95">
+                        <img src="{{ listing.image.url }}" class="w-full h-full object-cover" onclick="document.getElementById('main-image').src='{{ listing.image.url }}'">
+                    </div>
+                    {% endif %}
+                    {% for extra in listing.additional_images.all %}
+                        <div class="w-16 h-16 rounded-xl overflow-hidden border-2 border-transparent hover:border-blue-600 shadow-md cursor-pointer flex-shrink-0 transition-all active:scale-95">
+                            <img src="{{ extra.image.url }}" class="w-full h-full object-cover" onclick="document.getElementById('main-image').src='{{ extra.image.url }}'">
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="space-y-8 flex flex-col justify-center">
+            <div>
+                <h1 class="text-5xl font-black text-slate-900 leading-tight mb-4 tracking-tight">{{ listing.title }}</h1>
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold text-xs">
+                        {{ listing.seller.username|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-1">
+                            <p class="text-slate-900 font-bold text-sm">{{ listing.seller.username }}</p>
+                            {% if listing.seller.profile.verified %}
+                                <span class="text-blue-500" title="Verified Seller">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.64.304 1.25.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-slate-400 text-xs">{% if listing.seller.profile.verified %}Verified Seller{% else %}Registered User{% endif %}</p>
+                    </div>
+                </div>
+                    {% include "auctions/partials/bid_info.html" %}
+                    
+                    {% if not listing.has_started %}
+                        <div class="mt-8 bg-blue-50 border border-blue-100 rounded-2xl p-6 text-center">
+                            <h3 class="text-blue-600 font-black text-lg mb-2">Auction Starting Soon</h3>
+                            <p class="text-blue-800 font-bold">Starts in: {{ listing.start_time|timeuntil }}</p>
+                        </div>
+                    {% elif not listing.is_expired %}
+                        <form method="POST" class="relative mt-8">
+                            {% csrf_token %}
+                            <div class="relative">
+                                {{ bid_form.amount }}
+                                <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl">$</span>
+                            </div>
+                            {% if bid_form.amount.errors %}
+                                <p class="text-red-500 text-xs mt-2 font-bold">{{ bid_form.amount.errors.as_text }}</p>
+                            {% endif %}
+                            <button type="submit" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-200 transition-all hover:-translate-y-1 active:scale-[0.98]">
+                                Place Your Bid
+                            </button>
+                        </form>
+                    {% endif %}
+                    <p class="text-center text-slate-400 text-xs mt-6 px-4">Banning notice: Fake bids will result in immediate account termination.</p>
+                </div>
+                
+                {% if user.is_authenticated and listing.seller != user %}
+                    <div class="mt-6 flex justify-center">
+                        <a href="{% url 'report_listing' listing.id %}" class="flex items-center space-x-2 text-red-500 hover:text-red-600 font-bold transition-all text-sm group">
+                            <span class="opacity-70 group-hover:opacity-100 transition-opacity">🚩 Report this listing</span>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="border-t border-slate-200 pt-8">
+                <h4 class="text-sm font-black text-slate-900 mb-4 uppercase tracking-widest">Description</h4>
+                <p class="text-slate-600 leading-relaxed text-lg">{{ listing.description|linebreaks }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-20">
+        <h3 class="text-2xl font-black text-slate-900 mb-10 tracking-tight">Bid History</h3>
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                    <div hx-get="{% url 'bid_partial' listing.id %}" hx-trigger="every 5s" hx-select=".divide-y" hx-swap="innerHTML">
+                        {% if bids %}
+                            <div class="divide-y divide-slate-50">
+                                {% for bid in bids %}
+                                    <div class="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-900 font-bold">
+                                                {{ bid.bidder.username|slice:":1"|upper }}
+                                            </div>
+                                            <div>
+                                                <p class="font-black text-slate-900">{{ bid.bidder.username }}</p>
+                                                <p class="text-slate-400 text-sm">{{ bid.timestamp|timesince }} ago</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-2xl font-black text-blue-600 tabular-nums">${{ bid.amount }}</p>
+                                            <p class="text-slate-400 text-[10px] uppercase font-black tracking-widest">Highest Bidder</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-20 text-center">
+                                <p class="text-slate-400 font-bold text-lg">No bids made yet. Be the first to start!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
