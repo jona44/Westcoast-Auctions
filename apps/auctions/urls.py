@@ -1,5 +1,10 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from . import views, api_views
+
+router = DefaultRouter()
+router.register(r'api/listings', api_views.ListingViewSet, basename='api_listing')
+router.register(r'api/bids', api_views.BidViewSet, basename='api_bid')
 
 urlpatterns = [
     path('', views.listing_list, name='listing_list'),
@@ -10,4 +15,7 @@ urlpatterns = [
     path('listing/<int:pk>/delete/', views.listing_delete, name='listing_delete'),
     path('listing/<int:pk>/withdraw/', views.listing_withdraw, name='listing_withdraw'),
     path('my-listings/', views.my_listings, name='my_listings'),
+    
+    # API Router
+    path('', include(router.urls)),
 ]
