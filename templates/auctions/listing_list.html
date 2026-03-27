@@ -1,6 +1,47 @@
 {% extends "base.html" %}
 {% block title %}Explore Auctions - Auction Platform{% endblock %}
 {% block content %}
+{% if not user.is_authenticated %}
+<!-- Hero Section for New Users -->
+<div class="mb-16 py-20 px-8 rounded-[3rem] bg-slate-900 overflow-hidden relative border border-slate-800 shadow-2xl shadow-indigo-200/20 group">
+    <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-blue-500/10 mix-blend-overlay"></div>
+    <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-[600px] h-[600px] bg-blue-600/20 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-[400px] h-[400px] bg-indigo-600/20 blur-[100px] rounded-full"></div>
+
+    <div class="relative max-w-3xl mx-auto text-center">
+        <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-8 animate-pulse">
+            <span>✨ Live Auctions Every Second</span>
+        </div>
+        <h1 class="text-5xl md:text-7xl font-black text-white mb-8 leading-[1.1] tracking-tight">
+            Bid. Win. <br/>
+            <span class="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Dominate.</span>
+        </h1>
+        <p class="text-xl text-slate-400 mb-12 leading-relaxed max-w-xl mx-auto font-medium">
+            Join thousands of collectors on the world's most premium auction platform. Exclusive items, real-time bidding, and instant ownership.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <a href="{% url 'register' %}" class="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/10 group-hover:shadow-blue-500/20">
+                Join Now Free
+            </a>
+            <div class="flex items-center -space-x-3">
+                <div class="w-12 h-12 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-white shadow-lg overflow-hidden">
+                    <img src="https://i.pravatar.cc/150?u=1" class="w-full h-full object-cover opacity-80" alt="user">
+                </div>
+                <div class="w-12 h-12 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-white shadow-lg overflow-hidden">
+                    <img src="https://i.pravatar.cc/150?u=2" class="w-full h-full object-cover opacity-80" alt="user">
+                </div>
+                <div class="w-12 h-12 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-white shadow-lg overflow-hidden">
+                    <img src="https://i.pravatar.cc/150?u=3" class="w-full h-full object-cover opacity-80" alt="user">
+                </div>
+                <div class="pl-6 text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    +1.2k Active Now
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 <div class="mb-12">
     <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
         <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-slate-800"
