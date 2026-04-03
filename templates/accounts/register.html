@@ -10,6 +10,9 @@
     <form method="POST" class="space-y-6">
         {% csrf_token %}
         <div class="space-y-4">
+            <div class="rounded-3xl bg-blue-50 border border-blue-100 p-4 text-sm text-blue-700">
+                SMS verification is required to bid and list. We will send a 6-digit code to your mobile number.
+            </div>
             {% for field in form %}
                 <div>
                     <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1.5">{{ field.label }}</label>

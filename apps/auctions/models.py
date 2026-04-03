@@ -2,6 +2,15 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+class CategoryChoices(models.TextChoices):
+    ELECTRONICS = 'electronics', 'Electronics'
+    FASHION = 'fashion', 'Fashion'
+    HOME_GARDEN = 'home_garden', 'Home & Garden'
+    COLLECTIBLES = 'collectibles', 'Collectibles'
+    VEHICLES = 'vehicles', 'Vehicles'
+    TOYS = 'toys', 'Toys & Hobbies'
+    OTHER = 'other', 'Other'
+
 class Listing(models.Model):
     seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='listings')
     title = models.CharField(max_length=200)
@@ -9,14 +18,36 @@ class Listing(models.Model):
     starting_bid = models.DecimalField(max_digits=12, decimal_places=2)
     current_bid = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     image = models.ImageField(upload_to='listings/', blank=True, null=True)
-    category = models.CharField(max_length=100)
+    category = models.CharField(
+        max_length=50,
+        choices=CategoryChoices.choices,
+        default=CategoryChoices.OTHER
+    )
+    deposit_required = models.BooleanField(default=False)
+    deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    escrow_hold = models.BooleanField(default=True)
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField()
     is_active = models.BooleanField(default=True)
+    notified_ending_soon = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title
+
+    def requires_deposit(self):
+        return bool(self.deposit_required and self.deposit_amount and self.deposit_amount > 0)
+
+    def deposit_paid_by(self, user):
+        if not self.requires_deposit() or not user.is_authenticated:
+            return False
+        from apps.payments.models import PaymentRecord
+        return PaymentRecord.objects.filter(
+            user=user,
+            listing=self,
+            payment_type='deposit',
+            status='completed'
+        ).exists()
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -49,6 +80,9 @@ class Bid(models.Model):
     bidder = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bids')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
 
     def __str__(self):
         return f"{self.bidder.username} - {self.amount} on {self.listing.title}"
@@ -83,3 +117,14 @@ class ListingImage(models.Model):
                     img.save(self.image.path)
             except Exception:
                 pass  # Not a valid image; skip resizing
+
+class Watchlist(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='watchlist')
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='watchlisted_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'listing')
+
+    def __str__(self):
+        return f"{self.user.username} watching {self.listing.title}"

@@ -1,4 +1,4 @@
-<div id="bid-data" hx-get="{% url 'bid_partial' listing.id %}" hx-trigger="every 5s" hx-swap="outerHTML">
+<div id="bid-data" hx-get="{% url 'bid_partial' listing.id %}" hx-trigger="new_bid from:body" hx-swap="outerHTML">
     <!-- Current Bid & Timer -->
     <div class="flex items-center justify-between mb-8">
         <div>

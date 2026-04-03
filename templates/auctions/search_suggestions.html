@@ -1,0 +1,23 @@
+{% if suggestions %}
+    <div class="rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div class="px-4 py-3 text-xs uppercase tracking-[0.25em] font-black text-slate-400 bg-slate-50">Suggestions</div>
+        <div class="divide-y divide-slate-100">
+            {% for item in suggestions %}
+                <a href="{% url 'listing_detail' item.id %}" class="block px-4 py-3 hover:bg-slate-50 transition-colors">
+                    <div class="flex items-center justify-between gap-4">
+                        <p class="font-bold text-slate-900 truncate">{{ item.title }}</p>
+                        <span class="text-[11px] uppercase tracking-[0.24em] text-slate-500">{{ item.category }}</span>
+                    </div>
+                    <p class="text-slate-500 text-xs mt-1 line-clamp-2">{{ item.description }}</p>
+                </a>
+            {% endfor %}
+        </div>
+        <a href="{% url 'listing_list' %}?q={{ query|urlencode }}" class="block px-4 py-3 text-center text-sm font-black text-blue-600 hover:bg-slate-50 transition-colors">
+            View all results for "{{ query }}"
+        </a>
+    </div>
+{% elif query %}
+    <div class="rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50 p-4 text-sm text-slate-500">
+        No suggestions found. Press enter to search all auctions.
+    </div>
+{% endif %}

@@ -11,16 +11,32 @@
         {% csrf_token %}
         <div class="grid grid-cols-1 gap-6">
             {% for field in form %}
-                <div>
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1.5">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <p class="text-red-500 text-xs mt-1 font-medium">{{ field.errors.as_text }}</p>
-                    {% endif %}
-                    {% if field.help_text %}
-                        <p class="text-slate-400 text-[10px] mt-1 uppercase tracking-wider font-bold">{{ field.help_text|striptags }}</p>
-                    {% endif %}
-                </div>
+                {% if field.name == 'start_time' or field.name == 'image' %}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1.5">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="text-red-500 text-xs mt-1 font-medium">{{ field.errors.as_text }}</p>{% endif %}
+                        </div>
+                {% elif field.name == 'end_time' or field.name == 'additional_images' %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1.5">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="text-red-500 text-xs mt-1 font-medium">{{ field.errors.as_text }}</p>{% endif %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-1.5">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <p class="text-red-500 text-xs mt-1 font-medium">{{ field.errors.as_text }}</p>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <p class="text-slate-400 text-[10px] mt-1 uppercase tracking-wider font-bold">{{ field.help_text|striptags }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
             {% endfor %}
         </div>
         

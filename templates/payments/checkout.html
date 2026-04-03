@@ -5,6 +5,11 @@
     <div class="text-center mb-8">
         <h2 class="text-3xl font-black text-slate-900 tracking-tight">Final Step</h2>
         <p class="text-slate-500 mt-2">Check your order details before proceeding to payment.</p>
+        {% if checkout_type == 'deposit' %}
+            <p class="text-amber-500 mt-2 font-semibold">This payment secures your deposit and unlocks bidding eligibility for this auction.</p>
+        {% else %}
+            <p class="text-green-600 mt-2 font-semibold">This payment completes your winning purchase and will be held in escrow until receipt is confirmed.</p>
+        {% endif %}
     </div>
 
     <div class="bg-slate-50 rounded-2xl p-8 mb-8">
@@ -13,14 +18,14 @@
                  🎁
              </div>
              <div>
-                 <p class="text-xs text-slate-400 font-black uppercase tracking-widest">Item Won</p>
-                 <h3 class="text-xl font-bold text-slate-900">{{ close_info.listing.title }}</h3>
+                 <span class="text-xs text-slate-400 font-black uppercase tracking-widest">{{ 'Deposit' if checkout_type == 'deposit' else 'Item Won' }}</span>
+                 <h3 class="text-xl font-bold text-slate-900">{{ listing.title if checkout_type == 'deposit' else close_info.listing.title }}</h3>
              </div>
         </div>
         <div class="border-t border-slate-200 pt-6 space-y-4">
             <div class="flex justify-between items-center">
-                 <span class="text-slate-500">Winning Bid</span>
-                 <span class="text-xl font-bold text-slate-900">${{ close_info.winning_bid.amount }}</span>
+                 <span class="text-slate-500">{{ 'Required Deposit' if checkout_type == 'deposit' else 'Winning Bid' }}</span>
+                 <span class="text-xl font-bold text-slate-900">${{ listing.deposit_amount if checkout_type == 'deposit' else close_info.winning_bid.amount }}</span>
             </div>
             <div class="flex justify-between items-center text-2xl font-black text-blue-600">
                 <span>Total Amount Due</span>

@@ -1,15 +1,17 @@
 from pathlib import Path
 from datetime import timedelta
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure--v5bhk3ofehaylz#3i46xwwd=u223#%9l1-n*-5y#weiad214q'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'accounts.User'
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -28,6 +30,7 @@ INSTALLED_APPS = [
     'apps.moderation',
     'rest_framework',
     'corsheaders',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -56,12 +59,21 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'libraries': {
+                'auctions_extras': 'apps.auctions.templatetags.auctions_extras',
+            }
         },
     },
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -95,7 +107,7 @@ PAYFAST_CANCEL_URL = 'http://localhost:8001/payments/cancel/'
 PAYFAST_NOTIFY_URL = 'http://localhost:8001/payments/itn/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'Auction Platform <noreply@auctionweb.com>'
+DEFAULT_FROM_EMAIL = 'Tafelberg Auctions <noreply@tafelberg.com>'
 
 SITE_ID = 1
 AUTHENTICATION_BACKENDS = [
@@ -144,3 +156,13 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+# Bulk SMS provider configuration for phone verification
+BULKSMS_API_URL = os.environ.get('BULKSMS_API_URL', 'https://api.bulksms.com/v1/messages')
+BULKSMS_API_KEY = os.environ.get('BULKSMS_API_KEY')
+BULKSMS_USERNAME = os.environ.get('BULKSMS_USERNAME')
+BULKSMS_PASSWORD = os.environ.get('BULKSMS_PASSWORD')
+BULKSMS_SENDER = os.environ.get('BULKSMS_SENDER', 'Tafelberg Auctions')
+
+MEILISEARCH_URL = os.environ.get('MEILISEARCH_URL')
+MEILISEARCH_MASTER_KEY = os.environ.get('MEILISEARCH_MASTER_KEY')
+MEILISEARCH_INDEX = os.environ.get('MEILISEARCH_INDEX', 'listings')

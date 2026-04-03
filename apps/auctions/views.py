@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Listing, Bid, ListingImage, AuctionClose
+from django.urls import reverse
+from .models import Listing, Bid, ListingImage, AuctionClose, CategoryChoices, Watchlist
 from .forms import ListingForm, BidForm
+from .search import search_listings, search_suggestions as fetch_search_suggestions
 from django.utils import timezone
-
 from .notifications import send_outbid_notification, send_win_notification, send_seller_notification
-
 from django.db.models import Q
 
 def listing_list(request):
@@ -16,13 +16,11 @@ def listing_list(request):
     max_price = request.GET.get('max_price')
     sort = request.GET.get('sort', 'closing_soon')
 
-    listings = Listing.objects.filter(is_active=True, end_time__gt=timezone.now())
-
     if query:
-        listings = listings.filter(
-            Q(title__icontains=query) | Q(description__icontains=query)
-        )
-    
+        listings = search_listings(query)
+    else:
+        listings = Listing.objects.filter(is_active=True, end_time__gt=timezone.now())
+
     if category:
         listings = listings.filter(category=category)
         
@@ -41,16 +39,25 @@ def listing_list(request):
     elif sort == 'price_high':
         listings = listings.order_by('-current_bid')
 
-    categories = Listing.objects.values_list('category', flat=True).distinct()
-
     return render(request, 'auctions/listing_list.html', {
         'listings': listings,
-        'categories': categories,
+        'categories': CategoryChoices.choices,
         'search_query': query,
         'selected_category': category,
         'min_price': min_price,
         'max_price': max_price,
         'sort': sort
+    })
+
+
+def search_suggestions(request):
+    query = request.GET.get('q', '').strip()
+    suggestions = []
+    if query:
+        suggestions = fetch_search_suggestions(query, limit=6)
+    return render(request, 'auctions/search_suggestions.html', {
+        'suggestions': suggestions,
+        'query': query,
     })
 
 def bid_partial_view(request, pk):
@@ -75,6 +82,14 @@ def listing_detail(request, pk):
             messages.error(request, "You cannot bid on your own listing.")
             return redirect('listing_detail', pk=pk)
             
+        if not request.user.phone_verified:
+            messages.error(request, "You must verify your phone number before placing a bid.")
+            return redirect('verify_phone')
+
+        if listing.requires_deposit() and not listing.deposit_paid_by(request.user):
+            messages.error(request, "This listing requires a deposit before you can place a bid.")
+            return redirect('deposit_checkout', pk=pk)
+
         if not listing.has_started:
             messages.error(request, "This auction has not started yet.")
             return redirect('listing_detail', pk=pk)
@@ -93,24 +108,58 @@ def listing_detail(request, pk):
             previous_bid = bids.exclude(bidder=request.user).first()
             if previous_bid and previous_bid.bidder != request.user:
                 send_outbid_notification(listing, previous_bid.bidder)
+                from .notifications import send_outbid_push_notification
+                send_outbid_push_notification(listing, previous_bid.bidder, bid.amount)
                 
             messages.success(request, f"Successfully placed bid of ${bid.amount}!")
             return redirect('listing_detail', pk=pk)
     else:
         form = BidForm(listing=listing)
 
+    is_watching = False
+    deposit_paid = False
+    if request.user.is_authenticated:
+        is_watching = Watchlist.objects.filter(user=request.user, listing=listing).exists()
+        deposit_paid = listing.deposit_paid_by(request.user)
+
     return render(request, 'auctions/listing_detail.html', {
         'listing': listing,
         'bids': bids,
         'bid_form': form,
-        'now': timezone.now()
+        'now': timezone.now(),
+        'is_watching': is_watching,
+        'phone_verified': request.user.is_authenticated and request.user.phone_verified,
+        'deposit_paid': deposit_paid,
     })
+
+@login_required
+def watchlist(request):
+    listings = Listing.objects.filter(watchlisted_by__user=request.user).order_by('-created_at')
+    return render(request, 'auctions/watchlist.html', {
+        'listings': listings,
+    })
+
+@login_required
+def toggle_watchlist(request, pk):
+    listing = get_object_or_404(Listing, pk=pk)
+    watch, created = Watchlist.objects.get_or_create(user=request.user, listing=listing)
+    if not created:
+        watch.delete()
+        messages.info(request, f'Removed "{listing.title}" from your watchlist.')
+    else:
+        messages.success(request, f'Added "{listing.title}" to your watchlist.')
+
+    next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or reverse('listing_detail', args=[pk])
+    return redirect(next_url)
 
 from apps.moderation.models import ListingApproval
 
 @login_required
 def listing_create(request):
     if request.method == 'POST':
+        if not request.user.phone_verified:
+            messages.error(request, 'You must verify your phone number before creating a listing.')
+            return redirect('profile')
         form = ListingForm(request.POST, request.FILES)
         if form.is_valid():
             listing = form.save(commit=False)

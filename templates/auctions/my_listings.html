@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}My Listings - Auction Platform{% endblock %}
+{% block title %}My Listings - Tafelberg Auctions{% endblock %}
 {% block content %}
 <div class="mb-8">
     <div class="flex items-center justify-between">
@@ -40,7 +40,7 @@
             
             <div class="p-6 flex flex-col flex-1">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ item.category }}</span>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ item.get_category_display }}</span>
                     {% if item.is_active and not item.is_expired %}
                         <span class="text-xs font-bold {% if not item.has_started %}text-blue-500{% else %}text-red-500{% endif %}">
                             {% if not item.has_started %}Starts in {{ item.start_time|timeuntil }}{% else %}{{ item.end_time|timeuntil }} left{% endif %}

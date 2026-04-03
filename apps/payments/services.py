@@ -6,18 +6,16 @@ def generate_payfast_signature(data, pass_phrase=None):
     """
     Generates a PayFast signature for the given data dictionary.
     """
-    # Create query string
-    payload = ""
-    for key, value in data.items():
-        if value is not None and value != "":
-            payload += f"{key}={urllib.parse.quote_plus(str(value).strip())}&"
-    
-    # Remove last ampersand
-    payload = payload[:-1]
-    
+    sorted_items = sorted(
+        (k, v) for k, v in data.items() if v is not None and v != ""
+    )
+    payload = "&".join(
+        f"{key}={urllib.parse.quote_plus(str(value).strip())}" for key, value in sorted_items
+    )
+
     if pass_phrase:
         payload += f"&passphrase={urllib.parse.quote_plus(pass_phrase.strip())}"
-        
+
     return hashlib.md5(payload.encode()).hexdigest()
 
 def get_payfast_url():

@@ -32,3 +32,84 @@ def send_seller_notification(listing, winner):
     
     recipient_list = [seller.email]
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list)
+
+import firebase_admin
+from firebase_admin import credentials, messaging
+from apps.accounts.models import FCMDevice
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Initialize Firebase app only if it's not already initialized
+try:
+    if not firebase_admin._apps:
+        # Use a real service account file in production
+        # cred = credentials.Certificate("firebase-adminsdk.json")
+        # firebase_admin.initialize_app(cred)
+        pass # To avoid crashing locally if key is missing, leaving pass.
+except Exception as e:
+    logger.error(f"Failed to initialize Firebase Admin: {e}")
+
+def send_push_notification(user, title, body, data=None):
+    """
+    Sends an FCM push notification to all registered devices of a given user.
+    """
+    if not firebase_admin._apps:
+        logger.warning(f"Simulating push notification to {user}: Title='{title}', Body='{body}'")
+        return
+        
+    devices = FCMDevice.objects.filter(user=user)
+    if not devices.exists():
+        return
+
+    tokens = list(devices.values_list('token', flat=True))
+    
+    # We create a MulticastMessage for multiple device tokens
+    message = messaging.MulticastMessage(
+        notification=messaging.Notification(
+            title=title,
+            body=body,
+        ),
+        data=data or {},
+        tokens=tokens,
+    )
+    
+    try:
+        response = messaging.send_each_for_multicast(message)
+        logger.info(f"Successfully sent {response.success_count} messages, {response.failure_count} failed")
+        
+        # Optionally clean up invalid tokens
+        if response.failure_count > 0:
+            for idx, resp in enumerate(response.responses):
+                if not resp.success:
+                    if resp.exception.code in ['messaging/invalid-registration-token', 'messaging/registration-token-not-registered']:
+                        invalid_token = tokens[idx]
+                        FCMDevice.objects.filter(token=invalid_token).delete()
+    except Exception as e:
+        logger.error(f"Error sending FCM message: {e}")
+
+def send_outbid_push_notification(listing, old_bidder, new_bid_amount):
+    """
+    Notifies a user they have been outbid via push notification.
+    """
+    if not old_bidder:
+        return
+        
+    title = f"Outbid on {listing.title}!"
+    body = f"Someone placed a higher bid of ${new_bid_amount}. Place another bid now to win!"
+    data = {
+        'listing_id': str(listing.id),
+        'click_action': 'FLUTTER_NOTIFICATION_CLICK' # Often required for routing if needed
+    }
+    send_push_notification(old_bidder, title, body, data)
+
+def send_watchlist_ending_soon_push(listing, user):
+    """
+    Notifies a user that an auction they follow is ending soon.
+    """
+    title = f"Auction Ending Soon!"
+    body = f"The auction for '{listing.title}' is ending in less than an hour."
+    data = {
+        'listing_id': str(listing.id)
+    }
+    send_push_notification(user, title, body, data)

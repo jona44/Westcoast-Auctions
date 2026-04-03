@@ -53,15 +53,19 @@ class ListingForm(forms.ModelForm):
 
     class Meta:
         model = Listing
-        fields = ['title', 'description', 'starting_bid', 'image', 'category', 'start_time', 'end_time']
+        fields = ['title', 'description', 'starting_bid', 'category', 'deposit_required', 'deposit_amount', 'image', 'additional_images', 'start_time', 'end_time']
         widgets = {
             'description': forms.Textarea(attrs={'rows': '3'}),
         }
+    
+    field_order = ['title', 'description', 'starting_bid', 'category', 'deposit_required', 'deposit_amount', 'image', 'additional_images', 'start_time', 'end_time']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['image'].required = False
         self.fields['additional_images'].required = False
+        self.fields['deposit_amount'].required = False
+        self.fields['deposit_amount'].help_text = 'Optional deposit amount required before bidding.'
         for field in self.fields:
             self.fields[field].widget.attrs.update({
                 'class': 'block w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50'
@@ -71,8 +75,18 @@ class ListingForm(forms.ModelForm):
         cleaned_data = super().clean()
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
+        deposit_required = cleaned_data.get('deposit_required')
+        deposit_amount = cleaned_data.get('deposit_amount')
+
         if start_time and end_time and start_time >= end_time:
             self.add_error('end_time', "End time must be after the start time.")
+
+        if deposit_required:
+            if not deposit_amount or deposit_amount <= 0:
+                self.add_error('deposit_amount', "Deposit amount must be set and greater than zero when a deposit is required.")
+            elif deposit_amount >= cleaned_data.get('starting_bid', 0):
+                self.add_error('deposit_amount', "Deposit amount should be less than the starting bid.")
+
         return cleaned_data
 
 class BidForm(forms.ModelForm):

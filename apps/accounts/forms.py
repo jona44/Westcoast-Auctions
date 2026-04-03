@@ -9,10 +9,20 @@ class RegisterForm(UserCreationForm):
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['phone_number'].required = True
+        self.fields['phone_number'].help_text = 'Enter your mobile number to receive SMS verification.'
         for field in self.fields:
             self.fields[field].widget.attrs.update({
                 'class': 'block w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50'
             })
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data.get('phone_number', '').strip()
+        if not phone:
+            raise forms.ValidationError('Phone number is required for account verification.')
+        if not phone.lstrip('+').isdigit() or len(phone) < 9:
+            raise forms.ValidationError('Enter a valid phone number including country code.')
+        return phone
 
 class LoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
@@ -36,6 +46,21 @@ class UserUpdateForm(forms.ModelForm):
             self.fields[field].widget.attrs.update({
                 'class': 'block w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50'
             })
+
+class PhoneVerificationForm(forms.Form):
+    code = forms.CharField(
+        max_length=6,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter SMS code',
+            'class': 'block w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50',
+        }),
+    )
+
+    def clean_code(self):
+        code = self.cleaned_data.get('code', '').strip()
+        if not code.isdigit() or len(code) != 6:
+            raise forms.ValidationError('Enter the 6-digit verification code.')
+        return code
 
 from .models import Profile
 

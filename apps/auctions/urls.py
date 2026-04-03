@@ -15,6 +15,9 @@ urlpatterns = [
     path('listing/<int:pk>/delete/', views.listing_delete, name='listing_delete'),
     path('listing/<int:pk>/withdraw/', views.listing_withdraw, name='listing_withdraw'),
     path('my-listings/', views.my_listings, name='my_listings'),
+    path('watchlist/', views.watchlist, name='watchlist'),
+    path('listing/<int:pk>/toggle-watchlist/', views.toggle_watchlist, name='toggle_watchlist'),
+    path('search/suggestions/', views.search_suggestions, name='search_suggestions'),
     
     # API Router
     path('', include(router.urls)),

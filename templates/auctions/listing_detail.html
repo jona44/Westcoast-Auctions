@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ listing.title }} - Auction Platform{% endblock %}
+{% block title %}{{ listing.title }} - Tafelberg Auctions{% endblock %}
 {% block content %}
 <div class="max-w-5xl mx-auto mt-10">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -14,7 +14,7 @@
                 {% endif %}
                 <div class="absolute top-6 left-6 flex space-x-3">
                     <span class="bg-white/90 backdrop-blur-md {% if not listing.has_started %}text-amber-600{% else %}text-blue-700{% endif %} px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-sm">{% if not listing.has_started %}Scheduled{% else %}Active{% endif %}</span>
-                    <span class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-md shadow-blue-200">{{ listing.category }}</span>
+                    <span class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-md shadow-blue-200">{{ listing.get_category_display }}</span>
                 </div>
                 
                 {% if listing.seller == user %}
@@ -69,6 +69,16 @@
                     </div>
                 </div>
                     {% include "auctions/partials/bid_info.html" %}
+
+                    {% if user.is_authenticated and listing.seller != user %}
+                        <form method="POST" action="{% url 'toggle_watchlist' listing.id %}" class="mt-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'listing_detail' listing.id %}">
+                            <button type="submit" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border font-bold transition-all {% if is_watching %}bg-slate-900 text-white border-slate-900 hover:bg-slate-800{% else %}bg-white text-slate-700 border-slate-200 hover:bg-slate-50{% endif %}">
+                                {% if is_watching %}♥ Following{% else %}♡ Follow{% endif %}
+                            </button>
+                        </form>
+                    {% endif %}
                     
                     {% if not listing.has_started %}
                         <div class="mt-8 bg-blue-50 border border-blue-100 rounded-2xl p-6 text-center">
@@ -76,19 +86,37 @@
                             <p class="text-blue-800 font-bold">Starts in: {{ listing.start_time|timeuntil }}</p>
                         </div>
                     {% elif not listing.is_expired %}
-                        <form method="POST" class="relative mt-8">
-                            {% csrf_token %}
-                            <div class="relative">
-                                {{ bid_form.amount }}
-                                <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl">$</span>
+                        {% if user.is_authenticated and listing.seller == user %}
+                            <div class="mt-8 bg-slate-50 border border-slate-100 rounded-2xl p-6 text-center border-dashed">
+                                <p class="text-slate-500 font-bold">You are the seller of this item. You cannot place bids.</p>
                             </div>
-                            {% if bid_form.amount.errors %}
-                                <p class="text-red-500 text-xs mt-2 font-bold">{{ bid_form.amount.errors.as_text }}</p>
-                            {% endif %}
-                            <button type="submit" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-200 transition-all hover:-translate-y-1 active:scale-[0.98]">
-                                Place Your Bid
-                            </button>
-                        </form>
+                        {% elif user.is_authenticated and not phone_verified %}
+                            <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-2xl p-6 text-center">
+                                <p class="text-yellow-800 font-black text-lg">Phone verification required</p>
+                                <p class="text-slate-600 mt-2">You must verify your phone number before placing a bid. This helps prevent fake and non-paying bidders.</p>
+                                <a href="{% url 'verify_phone' %}" class="inline-flex mt-4 items-center justify-center px-5 py-3 rounded-2xl bg-yellow-600 text-white font-bold hover:bg-yellow-700 transition-all">Verify Phone</a>
+                            </div>
+                        {% elif user.is_authenticated and listing.requires_deposit and not deposit_paid %}
+                            <div class="mt-8 bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+                                <p class="text-amber-900 font-black text-lg">Deposit required to bid</p>
+                                <p class="text-slate-600 mt-2">This auction requires a deposit of <strong>${{ listing.deposit_amount }}</strong> before you can place bids.</p>
+                                <a href="{% url 'deposit_checkout' listing.id %}" class="inline-flex mt-4 items-center justify-center px-5 py-3 rounded-2xl bg-amber-700 text-white font-bold hover:bg-amber-800 transition-all">Pay Deposit</a>
+                            </div>
+                        {% else %}
+                            <form method="POST" class="relative mt-8">
+                                {% csrf_token %}
+                                <div class="relative">
+                                    {{ bid_form.amount }}
+                                    <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl">$</span>
+                                </div>
+                                {% if bid_form.amount.errors %}
+                                    <p class="text-red-500 text-xs mt-2 font-bold">{{ bid_form.amount.errors.as_text }}</p>
+                                {% endif %}
+                                <button type="submit" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-200 transition-all hover:-translate-y-1 active:scale-[0.98]">
+                                    Place Your Bid
+                                </button>
+                            </form>
+                        {% endif %}
                     {% endif %}
                     <p class="text-center text-slate-400 text-xs mt-6 px-4">Banning notice: Fake bids will result in immediate account termination.</p>
                 </div>
@@ -112,7 +140,7 @@
     <div class="mt-20">
         <h3 class="text-2xl font-black text-slate-900 mb-10 tracking-tight">Bid History</h3>
         <div class="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                    <div hx-get="{% url 'bid_partial' listing.id %}" hx-trigger="every 5s" hx-select=".divide-y" hx-swap="innerHTML">
+                    <div hx-get="{% url 'bid_partial' listing.id %}" hx-trigger="new_bid from:body" hx-select=".divide-y" hx-swap="innerHTML">
                         {% if bids %}
                             <div class="divide-y divide-slate-50">
                                 {% for bid in bids %}
@@ -142,4 +170,25 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const listingId = "{{ listing.id }}";
+        const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsUrl = wsScheme + "://" + window.location.host + "/ws/listings/" + listingId + "/";
+        
+        const bidSocket = new WebSocket(wsUrl);
+
+        bidSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'new_bid') {
+                document.body.dispatchEvent(new Event('new_bid'));
+            }
+        };
+
+        bidSocket.onclose = function(e) {
+            console.error('Bid socket closed unexpectedly', e);
+        };
+    });
+</script>
 {% endblock %}

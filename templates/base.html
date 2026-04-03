@@ -1,9 +1,10 @@
+{% load static auctions_extras %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Auction Platform{% endblock %}</title>
+    <title>{% block title %}Tafelberg Auctions{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
@@ -16,17 +17,33 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <a href="{% url 'listing_list' %}" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        AuctionPlatform
+                    <a href="{% url 'listing_list' %}" class="flex items-center space-x-3 group">
+                        <img src="{% static 'img/logo.png' %}" alt="Tafelberg Auctions" class="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-2xl font-black bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight">
+                            Tafelberg<span class="text-blue-600">Auctions</span>
+                        </span>
                     </a>
                 </div>
                 <div class="hidden sm:ml-6 sm:flex sm:items-center space-x-8">
                     <a href="{% url 'listing_list' %}" class="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">Home</a>
                     <a href="{% url 'listing_list' %}" class="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">Auctions</a>
+                    <div class="relative hidden lg:block">
+                        <form action="{% url 'listing_list' %}" method="get" class="flex items-center space-x-2">
+                            <input id="global-search-input" name="q" type="search" placeholder="Search auctions..." autocomplete="off"
+                                   class="w-64 px-4 py-2 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50 text-sm"
+                                   hx-get="{% url 'search_suggestions' %}"
+                                   hx-trigger="keyup changed delay:250ms from:#global-search-input"
+                                   hx-target="#search-suggestions"
+                                   hx-swap="innerHTML" />
+                            <button type="submit" class="hidden">Search</button>
+                        </form>
+                        <div id="search-suggestions" class="absolute left-0 right-0 mt-2 z-50"></div>
+                    </div>
                     {% if user.is_authenticated %}
                         <a href="{% url 'listing_create' %}" class="text-blue-600 hover:text-blue-700 px-3 py-2 text-sm font-bold transition-colors">Sell Item</a>
                         <a href="{% url 'my_listings' %}" class="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">My Listings</a>
-                        {% if user.is_staff %}
+                        <a href="{% url 'watchlist' %}" class="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">Watchlist</a>
+                        {% if user.is_staff or user|has_group:"Moderators" %}
                              <a href="{% url 'moderation_queue' %}" class="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">Moderation</a>
                         {% endif %}
                         <a href="{% url 'profile' %}" class="flex items-center space-x-2 group">
@@ -69,7 +86,7 @@
     <footer class="bg-white border-t border-slate-200 mt-20">
         <div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
             <p class="text-center text-slate-500 text-sm">
-                &copy; 2026 Auction Platform. All rights reserved.
+                &copy; 2026 Tafelberg Auctions. All rights reserved.
             </p>
         </div>
     </footer>
