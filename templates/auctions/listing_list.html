@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Explore Auctions - Tafelberg Auctions{% endblock %}
+{% block content %}
+{% if not user.is_authenticated %}
+<!-- Hero Section for New Users -->
+<div class="mb-16 py-20 px-8 rounded-[3rem] bg-slate-900 overflow-hidden relative border border-slate-800 shadow-2xl shadow-indigo-200/20 group">
+    <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-blue-500/10 mix-blend-overlay"></div>
+    <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-[600px] h-[600px] bg-blue-600/20 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-[400px] h-[400px] bg-indigo-600/20 blur-[100px] rounded-full"></div>
+
+    <div class="relative max-w-3xl mx-auto text-center">
+        <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-8 animate-pulse">
+            <span>✨ Live Auctions Every Second</span>
+        </div>
+        <h1 class="text-5xl md:text-7xl font-black text-white mb-8 leading-[1.1] tracking-tight">
+            Bid. Win. <br/>
+            <span class="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Dominate.</span>
+        </h1>
+        <p class="text-xl text-slate-400 mb-12 leading-relaxed max-w-xl mx-auto font-medium">
+            Join thousands of collectors on the world's most premium auction platform. Exclusive items, real-time bidding, and instant ownership.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <a href="{% url 'register' %}" class="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/10 group-hover:shadow-blue-500/20">
+                Join Now Free
+            </a>
+            <div class="flex items-center -space-x-3">
+                <div class="w-12 h-12 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-white shadow-lg overflow-hidden">
+                    <img src="https://i.pravatar.cc/150?u=1" class="w-full h-full object-cover opacity-80" alt="user">
+                </div>
+                <div class="w-12 h-12 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-white shadow-lg overflow-hidden">
+                    <img src="https://i.pravatar.cc/150?u=2" class="w-full h-full object-cover opacity-80" alt="user">
+                </div>
+                <div class="w-12 h-12 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-white shadow-lg overflow-hidden">
+                    <img src="https://i.pravatar.cc/150?u=3" class="w-full h-full object-cover opacity-80" alt="user">
+                </div>
+                <div class="pl-6 text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    +1.2k Active Now
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class="mb-12">
+    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-slate-800"
+              hx-get="{% url 'listing_list' %}"
+              hx-target="#listing-results"
+              hx-select="#listing-results"
+              hx-trigger="input delay:500ms, change from:select, submit"
+              hx-push-url="true">
+            <!-- Search -->
+            <div class="relative">
+                <input type="text" name="q" value="{{ search_query|default:'' }}" placeholder="Search auctions..." 
+                       class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50 text-sm">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+            </div>
+
+            <!-- Category -->
+            <select name="category" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50 text-sm appearance-none">
+                <option value="">All Categories</option>
+                {% for value, label in categories %}
+                    <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Price Range -->
+            <div class="flex items-center space-x-2">
+                <input type="number" name="min_price" value="{{ min_price|default:'' }}" placeholder="Min $" 
+                       class="w-full px-3 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50 text-sm">
+                <input type="number" name="max_price" value="{{ max_price|default:'' }}" placeholder="Max $" 
+                       class="w-full px-3 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50 text-sm">
+            </div>
+
+            <!-- Sort -->
+            <select name="sort" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none bg-slate-50 text-sm appearance-none">
+                <option value="closing_soon" {% if sort == 'closing_soon' %}selected{% endif %}>Closing Soon</option>
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+            </select>
+
+            <!-- Buttons -->
+            <div class="flex space-x-2">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-100 transition-all text-sm">
+                    Filter
+                </button>
+                <a href="{% url 'listing_list' %}" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all text-sm flex items-center justify-center">
+                    ✕
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="listing-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {% for item in listings %}
+        <div class="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/50 group hover:-translate-y-2 transition-all duration-300">
+            <div class="relative h-64 overflow-hidden">
+                {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                {% else %}
+                    <div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">No Image</div>
+                {% endif %}
+                <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-blue-600 shadow-sm">
+                    {{ item.get_category_display }}
+                </div>
+                <div class="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] font-bold text-white tracking-widest uppercase">
+                    {% if not item.has_started %}Starts: {{ item.start_time|timeuntil }}{% else %}Ends: {{ item.end_time|timeuntil }}{% endif %}
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div class="flex items-center space-x-2 mb-4">
+                    <div class="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                        {{ item.seller.username|slice:":1"|upper }}
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <span class="text-xs font-bold text-slate-900">{{ item.seller.username }}</span>
+                        {% if item.seller.profile.verified %}
+                            <span class="text-blue-500" title="Verified Seller">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.64.304 1.25.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 mb-2 truncate">{{ item.title }}</h3>
+                <p class="text-slate-500 text-sm mb-6 line-clamp-2 leading-relaxed h-[2.5rem]">
+                    {{ item.description }}
+                </p>
+                
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                    <div>
+                        <span class="block text-xs text-slate-500 uppercase font-bold tracking-tight">Current Bid</span>
+                        <span class="text-2xl font-black text-slate-900">${{ item.current_bid }}</span>
+                    </div>
+                    <a href="{% url 'listing_detail' item.id %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-md shadow-blue-100 transition-all active:scale-95">
+                        {% if user.is_authenticated and item.seller == user %}
+                            Manage
+                        {% elif not item.has_started %}
+                            Preview
+                        {% else %}
+                            Bid Now
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-span-full py-20 text-center">
+             <div class="text-4xl mb-4 text-slate-200">🔍</div>
+             <p class="text-slate-400 font-bold text-lg">No listings match your search criteria.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
